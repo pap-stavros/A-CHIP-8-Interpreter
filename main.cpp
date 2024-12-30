@@ -81,7 +81,7 @@ void run_opcode(uint16_t opcode) {
         case 0x00EE: // RET
             sp--;
             pc = stack[sp];
-            std::cout << "[" << millisecs() << "] RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
+            std::cout << "RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
             break;
 
         case 0x2000: // ring ring subroutine at NNN
@@ -90,7 +90,7 @@ void run_opcode(uint16_t opcode) {
                 stack[sp] = pc;
                 sp++;
                 pc = subaddress;
-                std::cout << "[" << millisecs() << "] Call subroutine at 0x" << std::hex << subaddress << std::dec << std::endl;
+                std::cout << "Call subroutine at 0x" << std::hex << subaddress << std::dec << std::endl;
             }
             break;
 
@@ -101,7 +101,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
                 if (v_regs[vx_index] != nn) {
                     pc += 2;  // Skip the next instruction
-                    std::cout << "[" << millisecs() << "] Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
+                    std::cout << "Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
                 }
             }
             break;
@@ -112,7 +112,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t vy_index = (opcode & 0x00F0) >> 4;
                 if (v_regs[vx_index] == v_regs[vy_index]) {
                     pc += 2;  // Skip the next instruction
-                    std::cout << "[" << millisecs() << "] Skipped instr cause V" << std::hex << vx_index << " == V" << vy_index << std::dec << std::endl;
+                    std::cout << "Skipped instr cause V" << std::hex << vx_index << " == V" << vy_index << std::dec << std::endl;
                 }
             }
             break;
@@ -123,7 +123,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
                 if (v_regs[vx_index] == nn) {
                     pc += 2;  // Skip the next instruction
-                    std::cout << "[" << millisecs() << "] Skipped isntru because V" << std::hex << vx_index << " == " << std::hex << (int)nn << std::dec << std::endl;
+                    std::cout << "Skipped isntru because V" << std::hex << vx_index << " == " << std::hex << (int)nn << std::dec << std::endl;
                 }
             }
             break;
@@ -133,8 +133,6 @@ void run_opcode(uint16_t opcode) {
             uint16_t address = opcode & 0x0FFF;
 
             if (address != pc) {
-                std::cout << "current PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
-                std::cout << "At 0x" << std::hex << pc << ", jumping to 0x" << address << std::dec << std::endl;
                 pc = address;
             } else {
                 std::cout << "Infinite loop detected, staying at 0x" << std::hex << pc << std::dec << std::endl;
@@ -147,7 +145,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t xvIndex = (opcode & 0x0F00) >> 8; // get reg indx value
                 uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF); // keep that value to urself
                 v_regs[xvIndex] = val8b; // and set it to something i forgot
-                std::cout << "[" << millisecs() << "] Set reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
+                std::cout << "et reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
             }
             break;
         
@@ -245,9 +243,9 @@ void run_opcode(uint16_t opcode) {
     }
 
     // purely to see how many instructions we can get
-    if (instruction_counter % 1000 == 0) {
-        std::cout << "Instructions executed: " << instruction_counter << std::endl;
-    }
+//    if (instruction_counter % 1000 == 0) {
+//        std::cout << "Instructions executed: " << instruction_counter << std::endl;
+//    }
 }
 
 // this is like the engine starter for video rendering
@@ -306,8 +304,6 @@ bool load_chip8_file(const std::string& filepath) {
 // loooooooooooooop (pretend its infinite o's yet you can still see the p)
 int main() {
     const std::string filepath = "2-ibm-logo.ch8"; // had to manually load rom cause im lazy
-
-    std::cout << "Initial screen[0][0]: " << screen[0][0] << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
 
     // rev up the engine (sdl2)
