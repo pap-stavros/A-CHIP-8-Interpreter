@@ -6,6 +6,7 @@
 #include <thread>
 #include <fstream>
 #include "chip8.h"
+#include <cstring>
 
 // memory stuff and other
 std::array<uint8_t, MEM_SIZE> memory{};
@@ -58,13 +59,9 @@ void run_opcode(uint16_t opcode) {
     instruction_counter++;
 
     switch (opcode & 0xF000) {
-        case 0x0000: // this is the clear screen opcode and the first one i implemented
+        case 0x0000: // first opcode i implemented
             if (opcode == 0x00E0) {
-                for (size_t y = 0; y < SHEIGHT; ++y) {
-                    for (size_t x = 0; x < SWIDTH; ++x) {
-                        screen[y][x] = false; // Clear each pixel
-                    }
-                }
+                std::memset(&screen, 0, sizeof(screen));
                 std::cout << "screen cleared." << std::endl;
                 render_screen();
             }
