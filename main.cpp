@@ -47,7 +47,7 @@ void render_screen() {
 }
 
 // timing stuff for performance purposes
-std::string current_time_ms() {
+std::string millisecs() {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
     auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
@@ -59,7 +59,7 @@ void run_opcode(uint16_t opcode) {
     instruction_counter++;
 
     switch (opcode & 0xF000) {
-        case 0x0000: // first opcode i implemented
+        case 0x0000: // first opcode i implementedgit
             if (opcode == 0x00E0) {
                 std::memset(&screen, 0, sizeof(screen));
                 std::cout << "screen cleared." << std::endl;
@@ -67,17 +67,159 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
-        case 0x1000: // JUMP TO NNN
-            pc = opcode & 0x0FFF;
-            std::cout << "[" << current_time_ms() << "] Jump to 0x" << std::hex << pc << std::dec << std::endl;
+        case 0x00EE: // RET
+            sp--;
+            pc = stack[sp];
+            std::cout << "[" << millisecs() << "] RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
             break;
 
-        case 0x6000: // LOAD REGISTER VALUE
+        case 0x2000: // ring ring subroutine at NNN
+            {
+                uint16_t subaddress = opcode & 0x0FFF;
+                stack[sp] = pc;
+                sp++;
+                pc = subaddress;
+                std::cout << "[" << millisecs() << "] Call subroutine at 0x" << std::hex << subaddress << std::dec << std::endl;
+            }
+            break;
+
+        
+        case 0x4000: // Skippppp next inst if vx isnt equal nn rejected too
+            {
+                uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
+                if (v_regs[vx_index] != nn) {
+                    pc += 2;  // Skip the next instruction
+                    std::cout << "[" << millisecs() << "] Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
+                }
+            }
+            break;
+
+        case 0x5000: // skipppp next isnt if vx is equal vy
+            {
+                uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                uint8_t vy_index = (opcode & 0x00F0) >> 4;
+                if (v_regs[vx_index] == v_regs[vy_index]) {
+                    pc += 2;  // Skip the next instruction
+                    std::cout << "[" << millisecs() << "] Skipped instr cause V" << std::hex << vx_index << " == V" << vy_index << std::dec << std::endl;
+                }
+            }
+            break;
+
+        case 0x3000: // skipppp next inst if vx equals nn bye bye rejected
+            {
+                uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
+                if (v_regs[vx_index] == nn) {
+                    pc += 2;  // Skip the next instruction
+                    std::cout << "[" << millisecs() << "] Skipped isntru because V" << std::hex << vx_index << " == " << std::hex << (int)nn << std::dec << std::endl;
+                }
+            }
+            break;
+            
+        case 0x1000: // JUMP TO NNN
+            std::cout << "current PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
+            std::cout << "At " << std::hex << pc << ", jumping to " << (opcode & 0x0FFF) << std::dec << std::endl;
+            pc = opcode & 0x0FFF; // Set PC to the target address
+            std::cout << "[" << millisecs() << "] Jump to 0x" << std::hex << pc << std::dec << std::endl;
+            std::cout << "(after jump) PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
+            break;
+
+
+        case 0x6000: // LOAD REG VALUE to vx
             {
                 uint8_t xvIndex = (opcode & 0x0F00) >> 8; // get reg indx value
                 uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF); // keep that value to urself
                 v_regs[xvIndex] = val8b; // and set it to something i forgot
-                std::cout << "[" << current_time_ms() << "] Set reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
+                std::cout << "[" << millisecs() << "] Set reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
+            }
+            break;
+        
+        case 0x7000: // add val8b to vx
+            {
+                uint8_t vxIndex = (opcode & 0x0F00) >> 8;
+                uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF);
+                v_regs[vxIndex] += val8b;
+                std::cout << "Add " << std::hex << (int)val8b << " to V" << vxIndex << std::dec << std::endl;
+            }
+            break;
+
+        case 0x8000: // big ass arithmetic stuff 
+            {
+                uint8_t vxIndex = (opcode & 0x0F00) >> 8;
+                uint8_t vyIndex = (opcode & 0x00F0) >> 4;
+                switch (opcode & 0x000F) {
+                    case 0x0: // vx = vy
+                        v_regs[vxIndex] = v_regs[vyIndex];
+                        break;
+                    case 0x1: // vx = vx OR Vy
+                        v_regs[vxIndex] |= v_regs[vyIndex];
+                        break;
+                    case 0x2: // vsx = vx and vy
+                        v_regs[vxIndex] &= v_regs[vyIndex];
+                        break;
+                    case 0x3: // vx = vx xror vfy
+                        v_regs[vxIndex] ^= v_regs[vyIndex];
+                        break;
+                    case 0x4: // vx = vx + vy
+                        {
+                            uint16_t result = v_regs[vxIndex] + v_regs[vyIndex];
+                            v_regs[vxIndex] = static_cast<uint8_t>(result);
+                            v_regs[0xF] = (result > 0xFF) ? 1 : 0;
+                        }
+                        break;
+                    case 0x5: // vx = vx - vy
+                        v_regs[0xF] = (v_regs[vxIndex] > v_regs[vyIndex]) ? 1 : 0;
+                        v_regs[vxIndex] -= v_regs[vyIndex];
+                        break;
+                    case 0x6: // vx = vx >> 1, lsb stuff
+                        v_regs[0xF] = v_regs[vxIndex] & 0x1; // vf to lsb
+                        v_regs[vxIndex] >>= 1;
+                        break;
+                    case 0x7: // vx = vy - vx
+                        v_regs[0xF] = (v_regs[vyIndex] > v_regs[vxIndex]) ? 1 : 0; // vf shall not take
+                        v_regs[vxIndex] = v_regs[vyIndex] - v_regs[vxIndex];
+                        break;
+                    case 0xE: // vx = vx << 1, set vf = msb
+                        v_regs[0xF] = (v_regs[vxIndex] & 0x80) >> 7; // vf = msbn
+                        v_regs[vxIndex] <<= 1;
+                        break;
+                    default:
+                        std::cout << "Unknown 8xy opcode, who dis: " << std::hex << opcode << std::dec << std::endl;
+                        break;
+                }
+            }
+            break;
+
+        case 0xA000:
+            {
+                i_reg = opcode & 0x0FFF;
+                std::cout << "set index reg to 0x" << std::hex << i_reg << std::dec << std::endl;
+            }
+            break;
+
+        case 0xD000: // finally! display and draw shit!
+            {
+                uint8_t x = v_regs[(opcode & 0x0F00) >> 8];
+                uint8_t y = v_regs[(opcode & 0x00F0) >> 4];
+                uint8_t height = opcode & 0x000F;
+
+                v_regs[0xF] = 0; // clear vf before doing gods work
+
+                for (uint8_t row = 0; row < height; ++row) {
+                    uint8_t sprite_row = memory[i_reg + row];
+                    for (uint8_t col = 0; col < 8; ++col) {
+                        if (sprite_row & (0x80 >> col)) {
+                            // collision check!!
+                            if (screen[y + row][x + col]) {
+                                v_regs[0xF] = 1; // vf = 1 if collision :)
+                            }
+                            screen[y + row][x + col] ^= true;
+                        }
+                    }
+                }
+                render_screen();
+                std::cout << "Draw sprite at (" << std::hex << (int)x << ", " << (int)y << ")" << std::dec << std::endl;
             }
             break;
 
@@ -145,7 +287,7 @@ bool load_chip8_file(const std::string& filepath) {
 
 // loooooooooooooop (pretend its infinite o's yet you can still see the p)
 int main() {
-    const std::string filepath = "1-chip8-logo.ch8"; // had to manually load rom cause im lazy
+    const std::string filepath = "2-ibm-logo.ch8"; // had to manually load rom cause im lazy
 
     // rev up the engine (sdl2)
     if (!init_SDL()) {
