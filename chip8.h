@@ -8,8 +8,8 @@
 
 
 constexpr size_t MEM_SIZE = 4096;
-constexpr size_t SWIDTH = 64;
-constexpr size_t SHEIGHT = 32; 
+constexpr size_t SWIDTH = 64 * 10;
+constexpr size_t SHEIGHT = 32 * 10; 
 constexpr size_t NUM_REGISTERS = 16;
 
 constexpr uint16_t PROGRAM_START = 0x200;

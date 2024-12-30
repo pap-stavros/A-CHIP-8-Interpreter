@@ -31,20 +31,31 @@ uint16_t grab_opcode() {
 
 
 void render_screen() {
+    const int scaleup = 10;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // this guy is busy as hell drawing pixels everywhere
+    // scale that boy up
     for (size_t y = 0; y < SHEIGHT; ++y) {
         for (size_t x = 0; x < SWIDTH; ++x) {
             if (screen[y][x]) {
                 SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-                SDL_RenderDrawPoint(renderer, static_cast<int>(x), static_cast<int>(y));
+
+                SDL_Rect rect = {
+                    static_cast<int>(x * scaleup),
+                    static_cast<int>(y * scaleup), 
+                    scaleup,                       
+                    scaleup                        
+                };
+
+                SDL_RenderFillRect(renderer, &rect);
             }
         }
     }
 
-    SDL_RenderPresent(renderer); // this guy is like the talk show host
+    SDL_RenderPresent(renderer);
 }
+
 
 // timing stuff for performance purposes
 std::string millisecs() {
@@ -118,13 +129,18 @@ void run_opcode(uint16_t opcode) {
             break;
             
         case 0x1000: // JUMP TO NNN
-            std::cout << "current PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
-            std::cout << "At " << std::hex << pc << ", jumping to " << (opcode & 0x0FFF) << std::dec << std::endl;
-            pc = opcode & 0x0FFF; // Set PC to the target address
-            std::cout << "[" << millisecs() << "] Jump to 0x" << std::hex << pc << std::dec << std::endl;
-            std::cout << "(after jump) PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
-            break;
+        {
+            uint16_t address = opcode & 0x0FFF;
 
+            if (address != pc) {
+                std::cout << "current PC is 0x" << std::hex << pc << std::dec << ", opcode: 0x" << std::hex << opcode << std::dec << std::endl;
+                std::cout << "At 0x" << std::hex << pc << ", jumping to 0x" << address << std::dec << std::endl;
+                pc = address;
+            } else {
+                std::cout << "Infinite loop detected, staying at 0x" << std::hex << pc << std::dec << std::endl;
+            }
+        }
+        break;
 
         case 0x6000: // LOAD REG VALUE to vx
             {
@@ -236,13 +252,15 @@ void run_opcode(uint16_t opcode) {
 
 // this is like the engine starter for video rendering
 bool init_SDL() {
+
+    std::cerr << "Initializing SDL2... " << std::endl;
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL_Init error i cant start: " << SDL_GetError() << std::endl;
         return false;
     }
 
     // the cool window that i might give ui cause i dont want to just make keybinds, im thinking a whole fake keyboard and all
-    window = SDL_CreateWindow(">_ CHIP-8 Interpreter by SP", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SWIDTH * 10, SHEIGHT * 10, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow(">_CHIP-8 Interpreter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SWIDTH, SHEIGHT, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "SDL_CreateWindow Something went bad idk: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -289,9 +307,13 @@ bool load_chip8_file(const std::string& filepath) {
 int main() {
     const std::string filepath = "2-ibm-logo.ch8"; // had to manually load rom cause im lazy
 
+    std::cout << "Initial screen[0][0]: " << screen[0][0] << std::endl;
+    std::cerr << "Loading ROM...: " << std::endl;
+
     // rev up the engine (sdl2)
     if (!init_SDL()) {
         return 1;
+         std::cerr << "SDL2 Initialized: " << std::endl;
     }
 
     // this is like an imaginary memory cartridge
@@ -309,12 +331,11 @@ int main() {
     constexpr auto frame_delay = std::chrono::microseconds(16667);
     auto last_frame_time = std::chrono::high_resolution_clock::now();
 
-    
     while (!quit) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed = current_time - last_frame_time;
 
-        
+        // Process 10 opcodes per loop iteration
         for (int i = 0; i < 10; i++) {
             uint16_t opcode = grab_opcode();
             run_opcode(opcode);
