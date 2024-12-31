@@ -39,7 +39,7 @@ void render_screen() {
     for (size_t y = 0; y < SHEIGHT; ++y) {
         for (size_t x = 0; x < SWIDTH; ++x) {
             if (screen[y][x]) {
-                SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+                SDL_SetRenderDrawColor(renderer, 51, 255, 51, 255);
 
                 SDL_Rect rect = {
                     static_cast<int>(x * scaleup),
