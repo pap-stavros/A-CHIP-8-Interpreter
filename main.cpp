@@ -1,14 +1,13 @@
 #include <iostream>
 #include <array>
 #include <cstdint>
-#include <SDL2/SDL.h>
 #include <chrono>
 #include <thread>
 #include <fstream>
 #include "chip8.h"
 #include <cstring>
+#include <raylib.h> // Raylib header
 
-// memory stuff and other
 std::array<uint8_t, MEM_SIZE> memory{};
 std::array<uint8_t, NUM_REGISTERS> v_regs{};
 uint16_t i_reg = 0; // index register
@@ -17,8 +16,9 @@ uint16_t sp = 0; // stack pointer
 std::array<uint16_t, 16> stack{};
 std::array<std::array<bool, SWIDTH>, SHEIGHT> screen{};
 
-SDL_Window* window = nullptr;
-SDL_Renderer* renderer = nullptr;
+// Raylib stuff
+bool window_initialized = false;
+Vector2 screen_size = { SWIDTH, SHEIGHT };
 
 uint16_t grab_opcode() {
     uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
@@ -26,33 +26,23 @@ uint16_t grab_opcode() {
     return opcode;
 }
 
-
 void render_screen() {
     const int scaleup = 10;
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_RenderClear(renderer);
+    BeginDrawing();
+    ClearBackground(BLACK);
 
     for (size_t y = 0; y < SHEIGHT; ++y) {
         for (size_t x = 0; x < SWIDTH; ++x) {
             if (screen[y][x]) {
-                SDL_SetRenderDrawColor(renderer, 51, 255, 51, 255);
-
-                SDL_Rect rect = {
-                    static_cast<int>(x * scaleup),
-                    static_cast<int>(y * scaleup), 
-                    scaleup,                       
-                    scaleup                        
-                };
-
-                SDL_RenderFillRect(renderer, &rect);
+                DrawRectangle(x * scaleup, y * scaleup, scaleup, scaleup, GREEN);
             }
         }
     }
 
-    SDL_RenderPresent(renderer);
+    EndDrawing();
 }
 
-//performance related timing stuff
+// performance related timing stuff
 std::string millisecs() {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
@@ -62,7 +52,6 @@ std::string millisecs() {
 
 // the opcode executor, i think he likes killing
 void run_opcode(uint16_t opcode) {
-    instruction_counter++;
 
     switch (opcode & 0xF000) {
         case 0x0000:
@@ -89,7 +78,6 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
-        
         case 0x4000:
             {
                 uint8_t vx_index = (opcode & 0x0F00) >> 8;
@@ -140,7 +128,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t xvIndex = (opcode & 0x0F00) >> 8;
                 uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF);
                 v_regs[xvIndex] = val8b;
-                std::cout << "et reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
+                std::cout << "set reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
             }
             break;
         
@@ -219,51 +207,33 @@ void run_opcode(uint16_t opcode) {
                     uint8_t sprite_row = memory[i_reg + row];
                     for (uint8_t col = 0; col < 8; ++col) {
                         if (sprite_row & (0x80 >> col)) {
-                            // collision check!!
+                            // collision detection
                             if (screen[y + row][x + col]) {
-                                v_regs[0xF] = 1;
+                                v_regs[0xF] = 1; 
                             }
-                            screen[y + row][x + col] ^= true;
+                            screen[y + row][x + col] ^= 1;
                         }
                     }
                 }
                 render_screen();
-                std::cout << "Draw sprite at (" << std::hex << (int)x << ", " << (int)y << ")" << std::dec << std::endl;
             }
             break;
 
         default:
-            std::cout << "Unknown opcode uhhhh implement it... 0x" << std::hex << opcode << std::dec << std::endl;
+            std::cout << "Unknown opcode: 0x" << std::hex << opcode << std::dec << std::endl;
             break;
     }
-
-    // purely to see how many instructions we can get
-//    if (instruction_counter % 1000 == 0) {
-//        std::cout << "Instructions executed: " << instruction_counter << std::endl;
-//    }
 }
 
-bool init_SDL() {
+bool init_raylib() {
+    std::cerr << "Initializing Raylib... " << std::endl;
+    InitWindow(SWIDTH, SHEIGHT, ">_ CHIP-8 Interpreter in Raylib.");
+    SetTargetFPS(60);
 
-    std::cerr << "Initializing SDL2... " << std::endl;
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cerr << "SDL_Init error i cant start: " << SDL_GetError() << std::endl;
-        return false;
-    }
-
-    // the cool window that i might give ui cause i dont want to just make keybinds, im thinking a whole fake keyboard and all
-    window = SDL_CreateWindow(">_CHIP-8 Interpreter", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SWIDTH, SHEIGHT, SDL_WINDOW_SHOWN);
-    if (!window) {
-        std::cerr << "SDL_CreateWindow Something went bad idk: " << SDL_GetError() << std::endl;
-        SDL_Quit();
-        return false;
-    }
-
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!renderer) {
-        std::cerr << "SDL_CreateRenderer something went even more bad " << SDL_GetError() << std::endl;
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+    if (!WindowShouldClose()) {
+        window_initialized = true;
+    } else {
+        std::cerr << "Raylib failed to start window, ooops...sorry!" << std::endl;
         return false;
     }
 
@@ -273,21 +243,20 @@ bool init_SDL() {
 bool load_chip8_file(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        std::cerr << "Failed to open file: " << filepath << std::endl;
+        std::cerr << "Failed to open file > " << filepath << std::endl;
         return false;
     }
 
-    std::streamsize size = file.tellg(); // tell me ur size file
-    file.seekg(0, std::ios::beg); // seek 0 or like go to the start
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
 
-    // is the file too big? probably not, still wanted to add this idk
     if (static_cast<size_t>(size) > (MEM_SIZE - 0x200)) {
-        std::cerr << "File too large!!!!!" << std::endl;
+        std::cerr << "File too large..." << std::endl;
         return false;
     }
 
     if (!file.read(reinterpret_cast<char*>(&memory[0x200]), size)) {
-        std::cerr << "cant read file: " << filepath << std::endl;
+        std::cerr << "Can't read that file > " << filepath << std::endl;
         return false;
     }
 
@@ -295,30 +264,23 @@ bool load_chip8_file(const std::string& filepath) {
 }
 
 int main() {
-    const std::string filepath = "2-ibm-logo.ch8"; // had to manually load rom cause im lazy
+    const std::string filepath = "ROMs/ibmlogo.ch8";
     std::cerr << "Loading ROM...: " << std::endl;
 
-    // rev up the engine (sdl2)
-    if (!init_SDL()) {
+    if (!init_raylib()) {
         return 1;
-         std::cerr << "SDL2 Initialized: " << std::endl;
     }
 
-    // this is like an imaginary memory cartridge
     if (!load_chip8_file(filepath)) {
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
+        CloseWindow();
         return 1;
     }
 
     bool quit = false;
-    SDL_Event e;
-
     constexpr auto frame_delay = std::chrono::microseconds(16667);
     auto last_frame_time = std::chrono::high_resolution_clock::now();
 
-    while (!quit) {
+    while (!quit && !WindowShouldClose()) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed = current_time - last_frame_time;
 
@@ -332,17 +294,9 @@ int main() {
             last_frame_time = current_time;
         }
 
-        while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                quit = true;
-            }
-        }
+        // future input handling here
     }
 
-    // clean up on aisle 8
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-
+    CloseWindow();
     return 0;
 }

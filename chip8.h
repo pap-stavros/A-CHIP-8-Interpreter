@@ -4,8 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
-#include <SDL2/SDL.h>
-
+#include <raylib.h>  // Change to include Raylib
 
 constexpr size_t MEM_SIZE = 4096;
 constexpr size_t SWIDTH = 64 * 10;
@@ -23,21 +22,19 @@ extern uint16_t pc;
 extern uint16_t sp;
 extern std::array<uint16_t, 16> stack;
 
-
 extern std::array<std::array<bool, SWIDTH>, SHEIGHT> screen;
 
-
-extern SDL_Window* window;
-extern SDL_Renderer* renderer;
+// Raylib-specific variables
+extern bool window_initialized;
+extern Vector2 screen_size;  // Window size
 
 extern unsigned long long instruction_counter;
-
 
 uint16_t grab_opcode();
 void render_screen();
 std::string current_time_ms();
 void run_opcode(uint16_t opcode);
-bool init_SDL();
-bool load_chip8_file(const std::string& filepath); 
+bool init_raylib();
+bool load_chip8_file(const std::string& filepath);
 
 #endif
