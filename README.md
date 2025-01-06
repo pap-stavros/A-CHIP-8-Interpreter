@@ -1,21 +1,25 @@
 # CHIP-8
+CHIP-8 emulator written in C++ with Raylib 🎮
 
-CHIP-8 emulator written in C++ with Raylib
+## About
+The CHIP-8 was an early platform for simple games and applications in the 1970s.<br>This emulator provides a modern implementation with cycle-accurate timing and original hardware quirks.
 
-<sub>by Stavros Papachristodoulou</sub>
+## Screenshot
+[You could add a screenshot of a game running]
 
 ## Development
-This emulator was developed and tested with the help of this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by Timendus.
+This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
 
 ### Future Goals
-- [ ] GUI debugger
-- [ ] Memory viewer
-- [ ] Register display
-- [ ] Configurable quirks menu
-- [ ] ROM browser
-- [ ] Custom key mapping
+- [ ] GUI Debugger
+- [ ] ROM Browser/Manager
+- [ ] Custom Key Mapping
+- [ ] Adjustable CPU speed
+- [ ] Configurable Quirks
 
-
+## Built With
+- [Timendus](https://github.com/Timendus) a comprehensive test suite.
+- [Raylib](https://www.raylib.com/) a graphics and audio library.
 ## Requirements
 
 - C++
