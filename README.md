@@ -7,6 +7,15 @@ The CHIP-8 was an early platform for simple games and applications in the 1970s.
 ## Screenshot
 [You could add a screenshot of a game running]
 
+
+## Controls
+```
+CHIP-8        Keyboard
+1 2 3 C       1 2 3 4
+4 5 6 D   →   Q W E R
+7 8 9 E       A S D F
+A 0 B F       Z X C V
+```
 ## Development
 This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
 
@@ -25,14 +34,6 @@ This emulator was developed and tested using this excellent [CHIP-8 Test Suite](
 - C++
 - Raylib
 - CMake
-
-## Controls
-```text
-CHIP-8 Key    Keyboard
-1 2 3 C       1 2 3 4
-4 5 6 D   →   Q W E R
-7 8 9 E       A S D F
-A 0 B F       Z X C V
 
 ## Build & Run
 
