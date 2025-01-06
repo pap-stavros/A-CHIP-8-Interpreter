@@ -480,9 +480,8 @@ bool load_chip8_file(const std::string& filepath) {
 }
 
 // the soup
-// Modify the main loop to handle sound:
 int main() {
-    const std::string filepath = "ROMs/beep.ch8";
+    const std::string filepath = "ROMs/keypad.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
@@ -525,7 +524,6 @@ int main() {
             --delay_timer;
         }
 
-        // Handle sound
         if (audio_initialized) {
             if (sound_timer > 0) {
                 if (!was_playing) {
@@ -553,3 +551,5 @@ int main() {
     std::cerr << "Goodbye, World..." << std::endl;
     return 0;
 }
+
+// Forgot to mention in previous commit about input handling lol...
