@@ -22,8 +22,9 @@ A 0 B F       Z X C V
 - [Raylib](https://www.raylib.com/) is the video/audio library of choice.
 
 ## Screenshots:
-Tetris.
+### Tetris
 ![Description](Assets/image.png)
 <br>
-Ace Attorney <br>
+
+### Ace Attorney <br>
 ![Description](Assets/image2.png)
