@@ -32,6 +32,25 @@ const std::map<int, uint8_t> keymap = {
     {KEY_Z, 0xA}, {KEY_X, 0x0}, {KEY_C, 0xB}, {KEY_V, 0xF}
 };
 
+const uint8_t fontset[FONTSET_SIZE] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
 // Raylib stuff
 bool window_initialized = false;
 Vector2 screen_size = { SWIDTH, SHEIGHT };
@@ -295,7 +314,7 @@ void run_opcode(uint16_t opcode) {
                 case 0x0029:
                     {
                         uint8_t vx_index = (opcode & 0x0F00) >> 8;
-                        i_reg = v_regs[vx_index] * 5;
+                        i_reg = FONTSET_START_ADDRESS + (v_regs[vx_index] * 5);
                     }
                     break;
                     
@@ -357,32 +376,43 @@ void run_opcode(uint16_t opcode) {
             break;
         }
 
+        case 0xC000: {
+            uint8_t vx = (opcode & 0x0F00) >> 8;
+            uint8_t nn = opcode & 0x00FF;
+            v_regs[vx] = (rand() & 0xFF) & nn;
+            break;
+        }
+
         case 0xD000: {
-            uint8_t x = v_regs[(opcode & 0x0F00) >> 8] % SWIDTH;  // Wrap around width
-            uint8_t y = v_regs[(opcode & 0x00F0) >> 4] % SHEIGHT; // Wrap around height
+            uint8_t vx = v_regs[(opcode & 0x0F00) >> 8];
+            uint8_t vy = v_regs[(opcode & 0x00F0) >> 4];
             uint8_t height = opcode & 0x000F;
             
-            v_regs[0xF] = 0;
+            std::cout << std::hex << "Draw sprite i:" << i_reg 
+                        << " vx:" << (int)vx << " vy:" << (int)vy 
+                        << " h:" << (int)height << std::dec << std::endl;
             
-            for (uint8_t row = 0; row < height && (y + row) < SHEIGHT; ++row) {
-                uint8_t sprite_row = memory[i_reg + row];
-                for (uint8_t col = 0; col < 8 && (x + col) < SWIDTH; ++col) {
-                    if (sprite_row & (0x80 >> col)) {
-                        // wrapping
-                        size_t screen_x = (x + col) % SWIDTH;
-                        size_t screen_y = (y + row) % SHEIGHT;
+            v_regs[0xF] = 0;
+
+            for (uint8_t row = 0; row < height; row++) {
+                uint8_t sprite_byte = memory[i_reg + row];
+                std::cout << "Row " << (int)row << " data: " << std::hex << (int)sprite_byte << std::dec << std::endl;
+                
+                for (uint8_t bit = 0; bit < 8; bit++) {
+                    if (sprite_byte & (0x80 >> bit)) {
+                        size_t x = (vx + bit) % SWIDTH;
+                        size_t y = (vy + row) % SHEIGHT;
                         
-                        if (screen[screen_y][screen_x]) {
+                        if (screen[y][x]) {
                             v_regs[0xF] = 1;
                         }
-                        
-                        screen[screen_y][screen_x] ^= 1;
+                        screen[y][x] ^= 1;
                     }
                 }
             }
             render_screen();
             break;
-        }
+            }
         
         default:
             std::cout << "Unknown opcode who dis: " << std::hex << opcode << " (" << (opcode & 0xF000) << ")" << std::dec << std::endl;
@@ -459,8 +489,10 @@ bool load_chip8_file(const std::string& filepath) {
 
 // the soup
 int main() {
+    std::memcpy(&memory[FONTSET_START_ADDRESS], fontset, FONTSET_SIZE);
+    srand(time(0));
     std::cerr << "Hello, World!: " << std::endl;
-    const std::string filepath = "ROMs/flags.ch8";
+    const std::string filepath = "ROMs/tetris.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
