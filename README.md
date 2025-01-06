@@ -4,10 +4,6 @@ CHIP-8 emulator written in C++ with Raylib 🎮
 ## About
 The CHIP-8 was an early platform for simple games and applications in the 1970s.<br>This emulator provides a modern implementation with cycle-accurate timing and original hardware quirks.
 
-## Screenshot
-[You could add a screenshot of a game running]
-
-
 ## Controls
 ```
 CHIP-8        Keyboard
