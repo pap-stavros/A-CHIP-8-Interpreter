@@ -1,15 +1,15 @@
 # CHIP-8
 
-CHIP-8 emulator written in C++ with Raylib 🎮
+CHIP-8 emulator written in C++ with Raylib 
+
+## Development
+This emulator was developed and tested with the help of this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by Timendus.
 
 ## Requirements
 
 - C++
 - Raylib
 - CMake
-
-## Development
-This emulator was developed and tested with the help of this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by Timendus.
 
 ## Controls
 ```text
