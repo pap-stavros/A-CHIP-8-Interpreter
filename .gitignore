@@ -1,52 +1,42 @@
-# Compiled object files
+# Build artifacts
 *.o
 *.obj
+*.exe
+*.out
+*.app
+build/
 
-# Compiled static libraries
+# Libraries
 *.lib
 *.a
-
-# Compiled dynamic libraries
 *.dll
 *.so
 *.dylib
 
-# Executable files
-*.exe
-*.out
-*.app
-
-# IDE and Editor Files
+# IDE and editors
 .vscode/
 .idea/
-*.sublime-workspace
-*.sublime-project
+*.sublime-*
+*~
+*.swp
 
-# CMake generated files
+# CMake
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 Makefile
 
-# Logs and debugging
+# Logs and temp files
 *.log
 *.debug
-
-# Temporary files
 *.tmp
 *.temp
-*.swp
-*~
 
-# SDL2-related generated files
-SDL2.dll
-build/
-
-# OS-specific files
+# OS specific
 .DS_Store
 Thumbs.db
 
-# Ignore other
+# Project specific
 *.bin
 *.ch8
 raygui.h
