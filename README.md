@@ -10,9 +10,6 @@ CHIP-8        Keyboard
 7 8 9 E       A S D F
 A 0 B F       Z X C V
 ```
-## Development
-This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
-
 ### Future Goals
 - [ ] GUI Debugger
 - [ ] ROM Browser/Manager
@@ -21,8 +18,8 @@ This emulator was developed and tested using this excellent [CHIP-8 Test Suite](
 - [ ] Configurable Quirks
 
 ## Built With
-- [Timendus](https://github.com/Timendus) a comprehensive test suite.
-- [Raylib](https://www.raylib.com/) a graphics and audio library.
+- This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
+- [Raylib](https://www.raylib.com/) is the video/audio library of choice.
 ## Requirements
 
 - C++
