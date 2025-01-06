@@ -8,6 +8,7 @@
 #include <cstring>
 #include <raylib.h>
 
+
 std::array<uint8_t, MEM_SIZE> memory{};
 std::array<uint8_t, NUM_REGISTERS> v_regs{};
 uint16_t i_reg = 0; // index register
@@ -16,9 +17,13 @@ uint16_t sp = 0; // stack pointer
 std::array<uint16_t, 16> stack{};
 std::array<std::array<bool, SWIDTH>, SHEIGHT> screen{};
 
+uint8_t delay_timer = 0;
+uint8_t sound_timer = 0;
+
 // Raylib stuff
 bool window_initialized = false;
 Vector2 screen_size = { SWIDTH, SHEIGHT };
+
 
 uint16_t grab_opcode() {
     uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
@@ -53,6 +58,10 @@ std::string millisecs() {
 // the opcode executor, i think he likes killing
 void run_opcode(uint16_t opcode) {
 
+    if ((opcode & 0xF000) == 0xF000) {
+        std::cout << "Matched 0x" << std::hex << opcode << std::dec << std::endl;
+    }
+
     switch (opcode & 0xF000) {
         case 0x0000:
             if (opcode == 0x00E0) {
@@ -66,7 +75,6 @@ void run_opcode(uint16_t opcode) {
             if (sp > 0) {
                 pc = stack[sp];
                 sp--;
-                std::cout << "RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
             } else {
                 std::cerr << "Stack underflow during RET, huh?" << std::endl;
             }
@@ -78,7 +86,6 @@ void run_opcode(uint16_t opcode) {
                 stack[sp] = pc;
                 sp++;
                 pc = subaddress;
-                std::cout << "Call subroutine at 0x" << std::hex << subaddress << std::dec << std::endl;
             }
             break;
 
@@ -87,7 +94,6 @@ void run_opcode(uint16_t opcode) {
             uint8_t nn = opcode & 0x00FF;
             if (v_regs[vx_index] != nn) {
                 pc += 2;
-                std::cout << "Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
             }
             break;
         }
@@ -98,7 +104,6 @@ void run_opcode(uint16_t opcode) {
                 uint8_t vy_index = (opcode & 0x00F0) >> 4;
                 if (v_regs[vx_index] == v_regs[vy_index]) {
                     pc += 2;
-                    std::cout << "Skipped instr cause V" << std::hex << vx_index << " == V" << vy_index << std::dec << std::endl;
                 }
             }
             break;
@@ -108,8 +113,7 @@ void run_opcode(uint16_t opcode) {
                 uint8_t vx_index = (opcode & 0x0F00) >> 8;
                 uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
                 if (v_regs[vx_index] == nn) {
-                    pc += 2;  // Skip the next instruction
-                    std::cout << "Skipped isntru because V" << std::hex << " == " << std::hex << (int)nn << std::dec << std::endl;
+                    pc += 2;
                 }
             }
             break;
@@ -131,7 +135,6 @@ void run_opcode(uint16_t opcode) {
                 uint8_t xvIndex = (opcode & 0x0F00) >> 8;
                 uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF);
                 v_regs[xvIndex] = val8b;
-                std::cout << "set reg V" << std::hex << (int)xvIndex << " to " << (int)val8b << std::dec << std::endl;
             }
             break;
         
@@ -140,7 +143,6 @@ void run_opcode(uint16_t opcode) {
                 uint8_t vxIndex = (opcode & 0x0F00) >> 8;
                 uint8_t val8b = static_cast<uint8_t>(opcode & 0x00FF);
                 v_regs[vxIndex] += val8b;
-                std::cout << "Add " << std::hex << (int)val8b << " to V" << vxIndex << std::dec << std::endl;
             }
             break;
 
@@ -199,7 +201,15 @@ void run_opcode(uint16_t opcode) {
             break;
         }
 
-        case 0x8007: { // SUBN Vx, Vy
+        case 0x8006: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            uint8_t flag = v_regs[0xF];
+            v_regs[0xF] = v_regs[vx_index] & 0x1;
+            v_regs[vx_index] >>= 1;
+            break;
+        }
+
+        case 0x8007: {
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
             uint8_t vy_index = (opcode & 0x00F0) >> 4;
             v_regs[vx_index] = v_regs[vy_index] - v_regs[vx_index];
@@ -207,20 +217,13 @@ void run_opcode(uint16_t opcode) {
             break;
         }
 
-        case 0x8E00: {
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            v_regs[0xF] = (v_regs[vx_index] & 0x80) >> 7;
-            v_regs[vx_index] <<= 1;
-            break;
-        }
-
         case 0x800E: {
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            v_regs[0xF] = (v_regs[vx_index] & 0x80) >> 7;
+            uint8_t flag = v_regs[0xF];
+            v_regs[0xF] = (v_regs[vx_index] >> 7) & 0x1;
             v_regs[vx_index] <<= 1;
             break;
         }
-
 
         case 0x9000: {
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
@@ -234,11 +237,11 @@ void run_opcode(uint16_t opcode) {
         case 0xA000:
             {
                 i_reg = opcode & 0x0FFF;
-                std::cout << "set index reg to 0x" << std::hex << i_reg << std::dec << std::endl;
             }
             break;
 
         case 0xF033: {
+            std::cout << "Handling 0xF033" << std::endl;
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
             memory[i_reg] = v_regs[vx_index] / 100;
             memory[i_reg + 1] = (v_regs[vx_index] / 10) % 10;
@@ -247,16 +250,62 @@ void run_opcode(uint16_t opcode) {
         }
 
         case 0xF01E: {
+            std::cout << "Handling 0xF01E" << std::endl;
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
             i_reg += v_regs[vx_index];
             v_regs[0xF] = (i_reg > 0xFFF) ? 1 : 0;
             break;
         }
 
+        case 0xF00A: {
+            std::cout << "Handling 0xF00A" << std::endl;
+            // No operation needed
+            break;
+        }
+
         case 0xF065: {
-            uint16_t address = i_reg; // hold my beer
+            std::cout << "Handling 0xF065" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            uint16_t address = i_reg;
             for (uint8_t i = 0; i <= 0xF; ++i) {
                 v_regs[i] = memory[address + i];
+            }
+            break;
+        }
+
+        case 0xF007: {
+            std::cout << "Handling 0xF007" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            v_regs[vx_index] = delay_timer;
+            break;
+        }
+
+        case 0xF015: {
+            std::cout << "Handling 0xF015" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            delay_timer = v_regs[vx_index];
+            break;
+        }
+
+        case 0xF018: {
+            std::cout << "Handling 0xF018" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            sound_timer = v_regs[vx_index];
+            break;
+        }
+
+        case 0xF029: {
+            std::cout << "Handling 0xF029" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            i_reg = v_regs[vx_index] * 5;
+            break;
+        }
+
+        case 0xF055: {
+            std::cout << "Handling 0xF055" << std::endl;
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            for (int i = 0; i <= vx_index; ++i) {
+                memory[i_reg + i] = v_regs[i];
             }
             break;
         }
@@ -286,7 +335,7 @@ void run_opcode(uint16_t opcode) {
             break;
 
         default:
-            std::cout << "Unknown opcode who dis: 0x" << std::hex << opcode << std::dec << std::endl;
+            std::cout << "Unknown opcode who dis: " << std::hex << opcode << " (" << (opcode & 0xF000) << ")" << std::dec << std::endl;
             break;
     }
 }
@@ -331,7 +380,10 @@ bool load_chip8_file(const std::string& filepath) {
 
 int main() {
     const std::string filepath = "ROMs/3corax.ch8";
+    freopen("debuglog.txt", "w", stdout);
+    std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
+    std::cerr << "Writing debug info in debuglog.txt..." << std::endl;
     SetTraceLogLevel(LOG_INFO);
 
     if (!init_raylib()) {
@@ -356,6 +408,14 @@ int main() {
             run_opcode(opcode);
         }
 
+        if (delay_timer > 0) {
+            --delay_timer;
+        }
+
+        if (sound_timer > 0) {
+            --sound_timer;
+        }
+
         if (elapsed >= frame_delay) {
             render_screen();
             last_frame_time = current_time;
@@ -365,5 +425,6 @@ int main() {
     }
 
     CloseWindow();
+    std::cerr << "Goodbye, World..." << std::endl;
     return 0;
 }
