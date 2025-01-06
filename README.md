@@ -24,7 +24,9 @@ A 0 B F       Z X C V
 ## Screenshots:
 ### Tetris
 ![Description](Assets/image3.png)
+- [Tetris ROM](https://github.com/soupi/chip-8/tree/master/roms)
 <br>
 
 ### Ace Attorney <br>
 ![Description](Assets/image2.png)
+- [Ace Attorney ROM](https://github.com/JohnEarnest/chip8Archive/tree/master/src/8ceattourny_d3)
