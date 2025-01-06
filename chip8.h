@@ -28,10 +28,12 @@ extern bool window_initialized;
 extern Vector2 screen_size;
 extern unsigned long long instruction_counter;
 
-// Key mapping for CHIP-8
-extern const std::map<int, uint8_t> key_map;
+extern std::array<bool, 16> keypad;
+extern const std::map<int, uint8_t> keymap;
 
-// Font data and related functions
+extern Sound beep;
+extern bool audio_initialized;
+
 extern const uint8_t fontset[FONTSET_SIZE];
 void load_font_set();
 

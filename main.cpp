@@ -7,6 +7,7 @@
 #include "chip8.h"
 #include <cstring>
 #include <raylib.h>
+#include <cmath>
 
 // Global variables
 std::array<uint8_t, MEM_SIZE> memory{};
@@ -19,6 +20,18 @@ std::array<std::array<bool, SWIDTH>, SHEIGHT> screen{};
 
 uint8_t delay_timer = 0;
 uint8_t sound_timer = 0;
+
+Sound beep;
+bool audio_initialized = false;
+
+std::array<bool, 16> keypad{};
+
+const std::map<int, uint8_t> keymap = {
+    {KEY_ONE, 0x1}, {KEY_TWO, 0x2}, {KEY_THREE, 0x3}, {KEY_FOUR, 0xC},
+    {KEY_Q, 0x4}, {KEY_W, 0x5}, {KEY_E, 0x6}, {KEY_R, 0xD},
+    {KEY_A, 0x7}, {KEY_S, 0x8}, {KEY_D, 0x9}, {KEY_F, 0xE},
+    {KEY_Z, 0xA}, {KEY_X, 0x0}, {KEY_C, 0xB}, {KEY_V, 0xF}
+};
 
 // Raylib stuff
 bool window_initialized = false;
@@ -257,9 +270,25 @@ void run_opcode(uint16_t opcode) {
                     }
                     break;
                     
-                case 0x000A:
-                    // Handle key press
+                case 0x000A: { // Wait for key press and store in Vx
+                    uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                    bool key_pressed = false;
+                    
+                    // Check all keys
+                    for (uint8_t i = 0; i < 16; i++) {
+                        if (keypad[i]) {
+                            v_regs[vx_index] = i;
+                            key_pressed = true;
+                            break;
+                        }
+                    }
+                    
+                    // If no key is pressed, decrease PC to repeat this instruction
+                    if (!key_pressed) {
+                        pc -= 2;
+                    }
                     break;
+                }
                     
                 case 0x0015:
                     {
@@ -324,6 +353,28 @@ void run_opcode(uint16_t opcode) {
             break;
         }
 
+        case 0xE000: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            switch (opcode & 0x00FF) {
+                case 0x009E:
+                    if (keypad[v_regs[vx_index]]) {
+                        pc += 2;
+                    }
+                    break;
+                    
+                case 0x00A1:
+                    if (!keypad[v_regs[vx_index]]) {
+                        pc += 2;
+                    }
+                    break;
+                    
+                default:
+                    std::cout << "Unknown 0xE000 opcode who dis: " << std::hex << opcode << std::dec << std::endl;
+                    break;
+            }
+            break;
+        }
+
         case 0xD000: {
             uint8_t x = v_regs[(opcode & 0x0F00) >> 8] % SWIDTH;  // Wrap around screen width
             uint8_t y = v_regs[(opcode & 0x00F0) >> 4] % SHEIGHT; // Wrap around screen height
@@ -358,7 +409,8 @@ void run_opcode(uint16_t opcode) {
             break;
     }
 }
-// Implementation of init_raylib
+
+
 bool init_raylib() {
     std::cerr << "Initializing Raylib... " << std::endl;
     
@@ -366,8 +418,34 @@ bool init_raylib() {
     InitWindow(SWIDTH * scaleup, SHEIGHT * scaleup, ">_ CHIP-8 Interpreter in Raylib.");
     SetTargetFPS(60);
 
-    // The previous check was wrong - WindowShouldClose() checks if the window
-    // should close, not if it's successfully initialized
+    // Initialize audio
+    InitAudioDevice();
+    if (IsAudioDeviceReady()) {
+        audio_initialized = true;
+        // Create a simple sine wave beep
+        const unsigned int sampleRate = 44100;
+        const unsigned int seconds = 1;
+        Wave wave = {
+            .frameCount = sampleRate * seconds,
+            .sampleRate = sampleRate,
+            .sampleSize = 16,
+            .channels = 1,
+            .data = nullptr
+        };
+        
+        wave.data = malloc(wave.frameCount * sizeof(short));
+
+        // Generate a 440Hz sine wave
+        short* samples = static_cast<short*>(wave.data);
+        for (unsigned int i = 0; i < wave.frameCount; i++) {
+            float time = static_cast<float>(i) / sampleRate;
+            samples[i] = static_cast<short>(32000.0f * std::sin(2.0f * PI * 440.0f * time));
+        }
+
+        beep = LoadSoundFromWave(wave);
+        UnloadWave(wave);
+    }
+
     if (IsWindowReady()) {
         window_initialized = true;
         return true;
@@ -401,9 +479,10 @@ bool load_chip8_file(const std::string& filepath) {
     return true;
 }
 
-// Main function
+// the soup
+// Modify the main loop to handle sound:
 int main() {
-    const std::string filepath = "ROMs/3corax.ch8";
+    const std::string filepath = "ROMs/beep.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
@@ -416,16 +495,26 @@ int main() {
 
     if (!load_chip8_file(filepath)) {
         CloseWindow();
+        if (audio_initialized) {
+            UnloadSound(beep);
+            CloseAudioDevice();
+        }
         return 1;
     }
 
     bool quit = false;
     constexpr auto frame_delay = std::chrono::microseconds(16667);
     auto last_frame_time = std::chrono::high_resolution_clock::now();
+    bool was_playing = false;
 
     while (!quit && !WindowShouldClose()) {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed = current_time - last_frame_time;
+
+        // Update keypad state
+        for (const auto& [key, chip8_key] : keymap) {
+            keypad[chip8_key] = IsKeyDown(key);
+        }
 
         for (int i = 0; i < 10; i++) {
             uint16_t opcode = grab_opcode();
@@ -436,8 +525,18 @@ int main() {
             --delay_timer;
         }
 
-        if (sound_timer > 0) {
-            --sound_timer;
+        // Handle sound
+        if (audio_initialized) {
+            if (sound_timer > 0) {
+                if (!was_playing) {
+                    PlaySound(beep);
+                    was_playing = true;
+                }
+                --sound_timer;
+            } else if (was_playing) {
+                StopSound(beep);
+                was_playing = false;
+            }
         }
 
         if (elapsed >= frame_delay) {
@@ -446,6 +545,10 @@ int main() {
         }
     }
 
+    if (audio_initialized) {
+        UnloadSound(beep);
+        CloseAudioDevice();
+    }
     CloseWindow();
     std::cerr << "Goodbye, World..." << std::endl;
     return 0;
