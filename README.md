@@ -8,17 +8,16 @@ CHIP-8 emulator written in C++ with Raylib 🎮
 - Raylib
 - CMake
 
-# Information
-This emulator was developed and tested using this excellent CHIP-8 Test Suite:
-(https://github.com/Timendus/chip8-test-suite?tab=readme-ov-file#beep-test)
+## Development
+This emulator was developed and tested with the help of this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by Timendus.
 
-
-Controls
-Original   Keyboard
-1 2 3 C    1 2 3 4
-4 5 6 D -> Q W E R
-7 8 9 E    A S D F
-A 0 B F    Z X C V
+## Controls
+```text
+CHIP-8 Key    Keyboard
+1 2 3 C       1 2 3 4
+4 5 6 D   →   Q W E R
+7 8 9 E       A S D F
+A 0 B F       Z X C V
 
 ### Future Goals
 - [ ] GUI debugger
