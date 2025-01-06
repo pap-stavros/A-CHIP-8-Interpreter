@@ -6,7 +6,7 @@
 #include <fstream>
 #include "chip8.h"
 #include <cstring>
-#include <raylib.h> // Raylib header
+#include <raylib.h>
 
 std::array<uint8_t, MEM_SIZE> memory{};
 std::array<uint8_t, NUM_REGISTERS> v_regs{};
@@ -63,9 +63,13 @@ void run_opcode(uint16_t opcode) {
             break;
 
         case 0x00EE: // RET
-            sp--;
-            pc = stack[sp];
-            std::cout << "RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
+            if (sp > 0) {
+                pc = stack[sp];
+                sp--;
+                std::cout << "RET from subroutine to 0x" << std::hex << pc << std::dec << std::endl;
+            } else {
+                std::cerr << "Stack underflow during RET, huh?" << std::endl;
+            }
             break;
 
         case 0x2000: // ring ring subroutine at NNN
@@ -78,16 +82,15 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
-        case 0x4000:
-            {
-                uint8_t vx_index = (opcode & 0x0F00) >> 8;
-                uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
-                if (v_regs[vx_index] != nn) {
-                    pc += 2;  // Skip the next instruction
-                    std::cout << "Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
-                }
+        case 0x4000: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            uint8_t nn = opcode & 0x00FF;
+            if (v_regs[vx_index] != nn) {
+                pc += 2;
+                std::cout << "Skipped instr cause V" << std::hex << vx_index << " != " << std::hex << (int)nn << std::dec << std::endl;
             }
             break;
+        }
 
         case 0x5000:
             {
@@ -106,11 +109,11 @@ void run_opcode(uint16_t opcode) {
                 uint8_t nn = static_cast<uint8_t>(opcode & 0x00FF);
                 if (v_regs[vx_index] == nn) {
                     pc += 2;  // Skip the next instruction
-                    std::cout << "Skipped isntru because V" << std::hex << vx_index << " == " << std::hex << (int)nn << std::dec << std::endl;
+                    std::cout << "Skipped isntru because V" << std::hex << " == " << std::hex << (int)nn << std::dec << std::endl;
                 }
             }
             break;
-            
+
         case 0x1000:
         {
             uint16_t address = opcode & 0x0FFF;
@@ -187,6 +190,14 @@ void run_opcode(uint16_t opcode) {
                 }
             }
             break;
+        
+        case 0x8005: {
+            uint8_t x = (opcode & 0x0F00) >> 8;
+            uint8_t y = (opcode & 0x00F0) >> 4;
+            v_regs[0xF] = v_regs[x] >= v_regs[y] ? 1 : 0;
+            v_regs[x] = v_regs[x] - v_regs[y];
+            break;
+        }
 
         case 0xA000:
             {
@@ -220,7 +231,7 @@ void run_opcode(uint16_t opcode) {
             break;
 
         default:
-            std::cout << "Unknown opcode: 0x" << std::hex << opcode << std::dec << std::endl;
+            std::cout << "Unknown opcode who dis: 0x" << std::hex << opcode << std::dec << std::endl;
             break;
     }
 }
@@ -264,8 +275,9 @@ bool load_chip8_file(const std::string& filepath) {
 }
 
 int main() {
-    const std::string filepath = "ROMs/ibmlogo.ch8";
+    const std::string filepath = "ROMs/3corax.ch8";
     std::cerr << "Loading ROM...: " << std::endl;
+    SetTraceLogLevel(LOG_INFO);
 
     if (!init_raylib()) {
         return 1;

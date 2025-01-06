@@ -4,7 +4,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
-#include <raylib.h>  // Change to include Raylib
+#include <raylib.h>
 
 constexpr size_t MEM_SIZE = 4096;
 constexpr size_t SWIDTH = 64 * 10;
@@ -24,9 +24,9 @@ extern std::array<uint16_t, 16> stack;
 
 extern std::array<std::array<bool, SWIDTH>, SHEIGHT> screen;
 
-// Raylib-specific variables
+
 extern bool window_initialized;
-extern Vector2 screen_size;  // Window size
+extern Vector2 screen_size;
 
 extern unsigned long long instruction_counter;
 
