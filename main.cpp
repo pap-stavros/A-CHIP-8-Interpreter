@@ -492,7 +492,7 @@ int main() {
     std::memcpy(&memory[FONTSET_START_ADDRESS], fontset, FONTSET_SIZE);
     srand(time(0));
     std::cerr << "Hello, World!: " << std::endl;
-    const std::string filepath = "ROMs/aceattorney.ch8";
+    const std::string filepath = "ROMs/tetris.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
