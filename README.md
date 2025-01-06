@@ -17,7 +17,7 @@ A 0 B F       Z X C V
 - [ ] Adjustable CPU speed
 - [ ] Configurable Quirks
 
-## Built With
+## Development
 - This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
 - [Raylib](https://www.raylib.com/) is the video/audio library of choice.
 ## Requirements
