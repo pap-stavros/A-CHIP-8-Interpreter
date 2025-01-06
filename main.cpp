@@ -9,7 +9,6 @@
 #include <raylib.h>
 #include <cmath>
 
-// Global variables
 std::array<uint8_t, MEM_SIZE> memory{};
 std::array<uint8_t, NUM_REGISTERS> v_regs{};
 uint16_t i_reg = 0; // index register
@@ -37,20 +36,19 @@ const std::map<int, uint8_t> keymap = {
 bool window_initialized = false;
 Vector2 screen_size = { SWIDTH, SHEIGHT };
 
-// Function declarations
+//declaration of independence, no just declarations actually
 bool init_raylib();
 bool load_chip8_file(const std::string& filepath);
 void render_screen();
 uint16_t grab_opcode();
 
-// Implementation of grab_opcode
+
 uint16_t grab_opcode() {
     uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
     pc += 2;
     return opcode;
 }
 
-// Implementation of render_screen
 void render_screen() {
     const int scaleup = 10;
     BeginDrawing();
@@ -67,7 +65,7 @@ void render_screen() {
     EndDrawing();
 }
 
-// Utility function for timing
+// timing stuff
 std::string millisecs() {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
@@ -75,12 +73,8 @@ std::string millisecs() {
     return std::to_string(millis);
 }
 
-// Main opcode executor
+//  opcode executor, hes a cold blooded motherf***er
 void run_opcode(uint16_t opcode) {
-    if ((opcode & 0xF000) == 0xF000) {
-        std::cout << "Matched 0x" << std::hex << opcode << std::dec << std::endl;
-    }
-
     switch (opcode & 0xF000) {
         case 0x0000:
             switch(opcode) {
@@ -90,10 +84,10 @@ void run_opcode(uint16_t opcode) {
                     render_screen();
                     break;
                     
-                case 0x00EE:  // Return from subroutine
+                case 0x00EE:
                     if (sp > 0) {
-                        --sp;  // Decrease stack pointer first
-                        pc = stack[sp];  // Then get the return address
+                        --sp;
+                        pc = stack[sp];
                     } else {
                         std::cerr << "Stack underflow during RET, huh?" << std::endl;
                     }
@@ -104,7 +98,7 @@ void run_opcode(uint16_t opcode) {
         case 0xB000:  // Jump with offset
         {
             uint16_t address = opcode & 0x0FFF;
-            pc = address + v_regs[0];  // Always use v0, not vX
+            pc = address + v_regs[0];
             break;
         }
 
@@ -174,53 +168,61 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
-        case 0x8000: // big arithmetic opcode
+        case 0x8000: // arithmetic opcodes
         {
             uint8_t vxIndex = (opcode & 0x0F00) >> 8;
             uint8_t vyIndex = (opcode & 0x00F0) >> 4;
+            uint8_t vx = v_regs[vxIndex];
+            uint8_t vy = v_regs[vyIndex];
+            
             switch (opcode & 0x000F) {
-                case 0x0:
-                    v_regs[vxIndex] = v_regs[vyIndex];
+                case 0x0: // VX = VY
+                    v_regs[vxIndex] = vy;
                     break;
-                case 0x1:
-                    v_regs[vxIndex] |= v_regs[vyIndex];
-                    v_regs[0xF] = 0;  // Add VF reset
+                case 0x1: // VX |= VY
+                    v_regs[vxIndex] = vx | vy;
                     break;
-                case 0x2:
-                    v_regs[vxIndex] &= v_regs[vyIndex];
-                    v_regs[0xF] = 0;  // Add VF reset
+                case 0x2: // VX &= VY
+                    v_regs[vxIndex] = vx & vy;
                     break;
-                case 0x3:
-                    v_regs[vxIndex] ^= v_regs[vyIndex];
-                    v_regs[0xF] = 0;  // Add VF reset
+                case 0x3: // VX ^= VY
+                    v_regs[vxIndex] = vx ^ vy;
                     break;
-                case 0x4:
-                    {
-                        uint16_t result = v_regs[vxIndex] + v_regs[vyIndex];
-                        v_regs[vxIndex] = static_cast<uint8_t>(result);
-                        v_regs[0xF] = (result > 0xFF) ? 1 : 0;
-                    }
+                case 0x4: { // VX += VY
+                    uint16_t result = vx + vy;
+                    uint8_t flag = (result > 0xFF) ? 1 : 0;
+                    v_regs[vxIndex] = static_cast<uint8_t>(result);
+                    v_regs[0xF] = flag;
                     break;
-                case 0x5:
-                    v_regs[0xF] = (v_regs[vxIndex] > v_regs[vyIndex]) ? 1 : 0;
-                    v_regs[vxIndex] -= v_regs[vyIndex];
+                }
+                case 0x5: { // VX -= VY
+                    uint8_t flag = (vx >= vy) ? 1 : 0;
+                    v_regs[vxIndex] = vx - vy;
+                    v_regs[0xF] = flag;
                     break;
-                case 0x6:
-                    v_regs[vxIndex] = v_regs[vyIndex]; 
-                    v_regs[0xF] = v_regs[vxIndex] & 0x1;
-                    v_regs[vxIndex] >>= 1;
+                }
+                case 0x6: { // VX = VY >> 1 (store LSB in VF)
+                    uint8_t val = vy;  // Some implementations use VX instead of VY
+                    uint8_t flag = val & 0x1;
+                    v_regs[vxIndex] = val >> 1;
+                    v_regs[0xF] = flag;
                     break;
-                case 0x7:
-                    v_regs[0xF] = (v_regs[vyIndex] > v_regs[vxIndex]) ? 1 : 0;
-                    v_regs[vxIndex] = v_regs[vyIndex] - v_regs[vxIndex];
+                }
+                case 0x7: { // VX = VY - VX
+                    uint8_t flag = (vy >= vx) ? 1 : 0;
+                    v_regs[vxIndex] = vy - vx;
+                    v_regs[0xF] = flag;
                     break;
-                case 0xE:
-                    v_regs[vxIndex] = v_regs[vyIndex]; 
-                    v_regs[0xF] = (v_regs[vxIndex] & 0x80) >> 7;
-                    v_regs[vxIndex] <<= 1;
+                }
+                case 0xE: { // VX = VY << 1 (store MSB in VF)
+                    uint8_t val = vy;  // Some implementations use VX instead of VY
+                    uint8_t flag = (val & 0x80) >> 7;
+                    v_regs[vxIndex] = val << 1;
+                    v_regs[0xF] = flag;
                     break;
+                }
                 default:
-                    std::cout << "Unknown 8xy opcode, who dis: " << std::hex << opcode << std::dec << std::endl;
+                    std::cout << "Unknown 8xy opcode: " << std::hex << opcode << std::dec << std::endl;
                     break;
             }
         }
@@ -250,11 +252,10 @@ void run_opcode(uint16_t opcode) {
                     }
                     break;
                     
-                case 0x000A: { // Wait for key press and store in Vx
+                case 0x000A: {
                     uint8_t vx_index = (opcode & 0x0F00) >> 8;
                     bool key_pressed = false;
                     
-                    // Check all keys
                     for (uint8_t i = 0; i < 16; i++) {
                         if (keypad[i]) {
                             v_regs[vx_index] = i;
@@ -263,7 +264,6 @@ void run_opcode(uint16_t opcode) {
                         }
                     }
                     
-                    // If no key is pressed, decrease PC to repeat this instruction
                     if (!key_pressed) {
                         pc -= 2;
                     }
@@ -358,26 +358,24 @@ void run_opcode(uint16_t opcode) {
         }
 
         case 0xD000: {
-            uint8_t x = v_regs[(opcode & 0x0F00) >> 8] % SWIDTH;  // Wrap around screen width
-            uint8_t y = v_regs[(opcode & 0x00F0) >> 4] % SHEIGHT; // Wrap around screen height
+            uint8_t x = v_regs[(opcode & 0x0F00) >> 8] % SWIDTH;  // Wrap around width
+            uint8_t y = v_regs[(opcode & 0x00F0) >> 4] % SHEIGHT; // Wrap around height
             uint8_t height = opcode & 0x000F;
             
-            v_regs[0xF] = 0; // Reset collision flag
+            v_regs[0xF] = 0;
             
             for (uint8_t row = 0; row < height && (y + row) < SHEIGHT; ++row) {
                 uint8_t sprite_row = memory[i_reg + row];
                 for (uint8_t col = 0; col < 8 && (x + col) < SWIDTH; ++col) {
                     if (sprite_row & (0x80 >> col)) {
-                        // Get screen coordinates with wrapping
+                        // wrapping
                         size_t screen_x = (x + col) % SWIDTH;
                         size_t screen_y = (y + row) % SHEIGHT;
                         
-                        // If there's already a pixel there, we have a collision
                         if (screen[screen_y][screen_x]) {
                             v_regs[0xF] = 1;
                         }
                         
-                        // XOR the pixel
                         screen[screen_y][screen_x] ^= 1;
                     }
                 }
@@ -400,11 +398,10 @@ bool init_raylib() {
     InitWindow(SWIDTH * scaleup, SHEIGHT * scaleup, ">_ CHIP-8 Interpreter in Raylib.");
     SetTargetFPS(60);
 
-    // Initialize audio
+    // audio stuff
     InitAudioDevice();
     if (IsAudioDeviceReady()) {
         audio_initialized = true;
-        // Create a simple sine wave beep
         const unsigned int sampleRate = 44100;
         const unsigned int seconds = 1;
         Wave wave = {
@@ -417,7 +414,7 @@ bool init_raylib() {
         
         wave.data = malloc(wave.frameCount * sizeof(short));
 
-        // Generate a 440Hz sine wave
+        // 440Hz sine wave
         short* samples = static_cast<short*>(wave.data);
         for (unsigned int i = 0; i < wave.frameCount; i++) {
             float time = static_cast<float>(i) / sampleRate;
@@ -437,7 +434,6 @@ bool init_raylib() {
     }
 }
 
-// Implementation of load_chip8_file
 bool load_chip8_file(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -463,11 +459,12 @@ bool load_chip8_file(const std::string& filepath) {
 
 // the soup
 int main() {
-    const std::string filepath = "ROMs/quirks.ch8";
+    std::cerr << "Hello, World!: " << std::endl;
+    const std::string filepath = "ROMs/flags.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
-    std::cerr << "Writing debug info in debuglog.txt..." << std::endl;
+    std::cerr << "Logging in debuglog.txt" << std::endl;
     SetTraceLogLevel(LOG_INFO);
 
     if (!init_raylib()) {
@@ -492,7 +489,6 @@ int main() {
         auto current_time = std::chrono::high_resolution_clock::now();
         auto elapsed = current_time - last_frame_time;
 
-        // Update keypad state
         for (const auto& [key, chip8_key] : keymap) {
             keypad[chip8_key] = IsKeyDown(key);
         }
