@@ -101,6 +101,13 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
+        case 0xB000:  // Jump with offset
+        {
+            uint16_t address = opcode & 0x0FFF;
+            pc = address + v_regs[0];  // Always use v0, not vX
+            break;
+        }
+
         case 0x2000: // ring ring subroutine at NNN
             {
                 uint16_t subaddress = opcode & 0x0FFF;
@@ -168,83 +175,56 @@ void run_opcode(uint16_t opcode) {
             break;
 
         case 0x8000: // big arithmetic opcode
-            {
-                uint8_t vxIndex = (opcode & 0x0F00) >> 8;
-                uint8_t vyIndex = (opcode & 0x00F0) >> 4;
-                switch (opcode & 0x000F) {
-                    case 0x0:
-                        v_regs[vxIndex] = v_regs[vyIndex];
-                        break;
-                    case 0x1:
-                        v_regs[vxIndex] |= v_regs[vyIndex];
-                        break;
-                    case 0x2: 
-                        v_regs[vxIndex] &= v_regs[vyIndex];
-                        break;
-                    case 0x3: 
-                        v_regs[vxIndex] ^= v_regs[vyIndex];
-                        break;
-                    case 0x4: 
-                        {
-                            uint16_t result = v_regs[vxIndex] + v_regs[vyIndex];
-                            v_regs[vxIndex] = static_cast<uint8_t>(result);
-                            v_regs[0xF] = (result > 0xFF) ? 1 : 0;
-                        }
-                        break;
-                    case 0x5:
-                        v_regs[0xF] = (v_regs[vxIndex] > v_regs[vyIndex]) ? 1 : 0;
-                        v_regs[vxIndex] -= v_regs[vyIndex];
-                        break;
-                    case 0x6:
-                        v_regs[0xF] = v_regs[vxIndex] & 0x1;
-                        v_regs[vxIndex] >>= 1;
-                        break;
-                    case 0x7:
-                        v_regs[0xF] = (v_regs[vyIndex] > v_regs[vxIndex]) ? 1 : 0;
-                        v_regs[vxIndex] = v_regs[vyIndex] - v_regs[vxIndex];
-                        break;
-                    case 0xE:
-                        v_regs[0xF] = (v_regs[vxIndex] & 0x80) >> 7; 
-                        v_regs[vxIndex] <<= 1;
-                        break;
-                    default:
-                        std::cout << "Unknown 8xy opcode, who dis: " << std::hex << opcode << std::dec << std::endl;
-                        break;
-                }
+        {
+            uint8_t vxIndex = (opcode & 0x0F00) >> 8;
+            uint8_t vyIndex = (opcode & 0x00F0) >> 4;
+            switch (opcode & 0x000F) {
+                case 0x0:
+                    v_regs[vxIndex] = v_regs[vyIndex];
+                    break;
+                case 0x1:
+                    v_regs[vxIndex] |= v_regs[vyIndex];
+                    v_regs[0xF] = 0;  // Add VF reset
+                    break;
+                case 0x2:
+                    v_regs[vxIndex] &= v_regs[vyIndex];
+                    v_regs[0xF] = 0;  // Add VF reset
+                    break;
+                case 0x3:
+                    v_regs[vxIndex] ^= v_regs[vyIndex];
+                    v_regs[0xF] = 0;  // Add VF reset
+                    break;
+                case 0x4:
+                    {
+                        uint16_t result = v_regs[vxIndex] + v_regs[vyIndex];
+                        v_regs[vxIndex] = static_cast<uint8_t>(result);
+                        v_regs[0xF] = (result > 0xFF) ? 1 : 0;
+                    }
+                    break;
+                case 0x5:
+                    v_regs[0xF] = (v_regs[vxIndex] > v_regs[vyIndex]) ? 1 : 0;
+                    v_regs[vxIndex] -= v_regs[vyIndex];
+                    break;
+                case 0x6:
+                    v_regs[vxIndex] = v_regs[vyIndex]; 
+                    v_regs[0xF] = v_regs[vxIndex] & 0x1;
+                    v_regs[vxIndex] >>= 1;
+                    break;
+                case 0x7:
+                    v_regs[0xF] = (v_regs[vyIndex] > v_regs[vxIndex]) ? 1 : 0;
+                    v_regs[vxIndex] = v_regs[vyIndex] - v_regs[vxIndex];
+                    break;
+                case 0xE:
+                    v_regs[vxIndex] = v_regs[vyIndex]; 
+                    v_regs[0xF] = (v_regs[vxIndex] & 0x80) >> 7;
+                    v_regs[vxIndex] <<= 1;
+                    break;
+                default:
+                    std::cout << "Unknown 8xy opcode, who dis: " << std::hex << opcode << std::dec << std::endl;
+                    break;
             }
-            break;
-        
-        case 0x8005: {
-            uint8_t x = (opcode & 0x0F00) >> 8;
-            uint8_t y = (opcode & 0x00F0) >> 4;
-            v_regs[0xF] = v_regs[x] >= v_regs[y] ? 1 : 0;
-            v_regs[x] = v_regs[x] - v_regs[y];
-            break;
         }
-
-        case 0x8006: {
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            uint8_t flag = v_regs[0xF];
-            v_regs[0xF] = v_regs[vx_index] & 0x1;
-            v_regs[vx_index] >>= 1;
-            break;
-        }
-
-        case 0x8007: {
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            uint8_t vy_index = (opcode & 0x00F0) >> 4;
-            v_regs[vx_index] = v_regs[vy_index] - v_regs[vx_index];
-            v_regs[0xF] = (v_regs[vy_index] > v_regs[vx_index]) ? 1 : 0;
-            break;
-        }
-
-        case 0x800E: {
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            uint8_t flag = v_regs[0xF];
-            v_regs[0xF] = (v_regs[vx_index] >> 7) & 0x1;
-            v_regs[vx_index] <<= 1;
-            break;
-        }
+        break;
 
         case 0x9000: {
             uint8_t vx_index = (opcode & 0x0F00) >> 8;
@@ -329,22 +309,24 @@ void run_opcode(uint16_t opcode) {
                     break;
                     
                 case 0x0055:
-                    {
-                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
-                        for (int i = 0; i <= vx_index; ++i) {
-                            memory[i_reg + i] = v_regs[i];
-                        }
+                {
+                    uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                    for (int i = 0; i <= vx_index; ++i) {
+                        memory[i_reg + i] = v_regs[i];
                     }
-                    break;
-                    
+                    i_reg += vx_index + 1;
+                }
+                break;
+
                 case 0x0065:
-                    {
-                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
-                        for (int i = 0; i <= vx_index; ++i) {
-                            v_regs[i] = memory[i_reg + i];
-                        }
+                {
+                    uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                    for (int i = 0; i <= vx_index; ++i) {
+                        v_regs[i] = memory[i_reg + i];
                     }
-                    break;
+                    i_reg += vx_index + 1;
+                }
+                break;
                     
                 default:
                     std::cout << "Unknown 0xF000 opcode: " << std::hex << opcode << std::dec << std::endl;
@@ -481,7 +463,7 @@ bool load_chip8_file(const std::string& filepath) {
 
 // the soup
 int main() {
-    const std::string filepath = "ROMs/aceattorney.ch8";
+    const std::string filepath = "ROMs/quirks.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
