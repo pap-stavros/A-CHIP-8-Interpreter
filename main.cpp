@@ -199,12 +199,67 @@ void run_opcode(uint16_t opcode) {
             break;
         }
 
+        case 0x8007: { // SUBN Vx, Vy
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            uint8_t vy_index = (opcode & 0x00F0) >> 4;
+            v_regs[vx_index] = v_regs[vy_index] - v_regs[vx_index];
+            v_regs[0xF] = (v_regs[vy_index] > v_regs[vx_index]) ? 1 : 0;
+            break;
+        }
+
+        case 0x8E00: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            v_regs[0xF] = (v_regs[vx_index] & 0x80) >> 7;
+            v_regs[vx_index] <<= 1;
+            break;
+        }
+
+        case 0x800E: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            v_regs[0xF] = (v_regs[vx_index] & 0x80) >> 7;
+            v_regs[vx_index] <<= 1;
+            break;
+        }
+
+
+        case 0x9000: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            uint8_t vy_index = (opcode & 0x00F0) >> 4;
+            if (v_regs[vx_index] != v_regs[vy_index]) {
+                pc += 2;
+            }
+            break;
+        }
+
         case 0xA000:
             {
                 i_reg = opcode & 0x0FFF;
                 std::cout << "set index reg to 0x" << std::hex << i_reg << std::dec << std::endl;
             }
             break;
+
+        case 0xF033: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            memory[i_reg] = v_regs[vx_index] / 100;
+            memory[i_reg + 1] = (v_regs[vx_index] / 10) % 10;
+            memory[i_reg + 2] = v_regs[vx_index] % 10;
+            break;
+        }
+
+        case 0xF01E: {
+            uint8_t vx_index = (opcode & 0x0F00) >> 8;
+            i_reg += v_regs[vx_index];
+            v_regs[0xF] = (i_reg > 0xFFF) ? 1 : 0;
+            break;
+        }
+
+        case 0xF065: {
+            uint16_t address = i_reg; // hold my beer
+            for (uint8_t i = 0; i <= 0xF; ++i) {
+                v_regs[i] = memory[address + i];
+            }
+            break;
+        }
 
         case 0xD000:
             {
