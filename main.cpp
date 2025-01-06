@@ -481,7 +481,7 @@ bool load_chip8_file(const std::string& filepath) {
 
 // the soup
 int main() {
-    const std::string filepath = "ROMs/keypad.ch8";
+    const std::string filepath = "ROMs/aceattorney.ch8";
     freopen("debuglog.txt", "w", stdout);
     std::cerr << "ROM found: " << filepath << std::endl;
     std::cerr << "Loading ROM...: " << std::endl;
@@ -551,5 +551,3 @@ int main() {
     std::cerr << "Goodbye, World..." << std::endl;
     return 0;
 }
-
-// Forgot to mention in previous commit about input handling lol...
