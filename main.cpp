@@ -8,11 +8,11 @@
 #include <cstring>
 #include <raylib.h>
 
-
+// Global variables
 std::array<uint8_t, MEM_SIZE> memory{};
 std::array<uint8_t, NUM_REGISTERS> v_regs{};
 uint16_t i_reg = 0; // index register
-uint16_t pc = 0x200; // not sure if i still need to do that i think i changed some code later but ill keep it just in case...
+uint16_t pc = 0x200;
 uint16_t sp = 0; // stack pointer
 std::array<uint16_t, 16> stack{};
 std::array<std::array<bool, SWIDTH>, SHEIGHT> screen{};
@@ -24,13 +24,20 @@ uint8_t sound_timer = 0;
 bool window_initialized = false;
 Vector2 screen_size = { SWIDTH, SHEIGHT };
 
+// Function declarations
+bool init_raylib();
+bool load_chip8_file(const std::string& filepath);
+void render_screen();
+uint16_t grab_opcode();
 
+// Implementation of grab_opcode
 uint16_t grab_opcode() {
     uint16_t opcode = (memory[pc] << 8) | memory[pc + 1];
     pc += 2;
     return opcode;
 }
 
+// Implementation of render_screen
 void render_screen() {
     const int scaleup = 10;
     BeginDrawing();
@@ -47,7 +54,7 @@ void render_screen() {
     EndDrawing();
 }
 
-// performance related timing stuff
+// Utility function for timing
 std::string millisecs() {
     auto now = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
@@ -55,28 +62,29 @@ std::string millisecs() {
     return std::to_string(millis);
 }
 
-// the opcode executor, i think he likes killing
+// Main opcode executor
 void run_opcode(uint16_t opcode) {
-
     if ((opcode & 0xF000) == 0xF000) {
         std::cout << "Matched 0x" << std::hex << opcode << std::dec << std::endl;
     }
 
     switch (opcode & 0xF000) {
         case 0x0000:
-            if (opcode == 0x00E0) {
-                std::memset(&screen, 0, sizeof(screen));
-                std::cout << "screen cleared." << std::endl;
-                render_screen();
-            }
-            break;
-
-        case 0x00EE: // RET
-            if (sp > 0) {
-                pc = stack[sp];
-                sp--;
-            } else {
-                std::cerr << "Stack underflow during RET, huh?" << std::endl;
+            switch(opcode) {
+                case 0x00E0:  // Clear screen
+                    std::memset(&screen, 0, sizeof(screen));
+                    std::cout << "screen cleared." << std::endl;
+                    render_screen();
+                    break;
+                    
+                case 0x00EE:  // Return from subroutine
+                    if (sp > 0) {
+                        --sp;  // Decrease stack pointer first
+                        pc = stack[sp];  // Then get the return address
+                    } else {
+                        std::cerr << "Stack underflow during RET, huh?" << std::endl;
+                    }
+                    break;
             }
             break;
 
@@ -240,121 +248,136 @@ void run_opcode(uint16_t opcode) {
             }
             break;
 
-        case 0xF033: {
-            std::cout << "Handling 0xF033" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            memory[i_reg] = v_regs[vx_index] / 100;
-            memory[i_reg + 1] = (v_regs[vx_index] / 10) % 10;
-            memory[i_reg + 2] = v_regs[vx_index] % 10;
-            break;
-        }
-
-        case 0xF01E: {
-            std::cout << "Handling 0xF01E" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            i_reg += v_regs[vx_index];
-            v_regs[0xF] = (i_reg > 0xFFF) ? 1 : 0;
-            break;
-        }
-
-        case 0xF00A: {
-            std::cout << "Handling 0xF00A" << std::endl;
-            // No operation needed
-            break;
-        }
-
-        case 0xF065: {
-            std::cout << "Handling 0xF065" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            uint16_t address = i_reg;
-            for (uint8_t i = 0; i <= 0xF; ++i) {
-                v_regs[i] = memory[address + i];
-            }
-            break;
-        }
-
-        case 0xF007: {
-            std::cout << "Handling 0xF007" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            v_regs[vx_index] = delay_timer;
-            break;
-        }
-
-        case 0xF015: {
-            std::cout << "Handling 0xF015" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            delay_timer = v_regs[vx_index];
-            break;
-        }
-
-        case 0xF018: {
-            std::cout << "Handling 0xF018" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            sound_timer = v_regs[vx_index];
-            break;
-        }
-
-        case 0xF029: {
-            std::cout << "Handling 0xF029" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            i_reg = v_regs[vx_index] * 5;
-            break;
-        }
-
-        case 0xF055: {
-            std::cout << "Handling 0xF055" << std::endl;
-            uint8_t vx_index = (opcode & 0x0F00) >> 8;
-            for (int i = 0; i <= vx_index; ++i) {
-                memory[i_reg + i] = v_regs[i];
-            }
-            break;
-        }
-
-        case 0xD000:
-            {
-                uint8_t x = v_regs[(opcode & 0x0F00) >> 8];
-                uint8_t y = v_regs[(opcode & 0x00F0) >> 4];
-                uint8_t height = opcode & 0x000F;
-
-                v_regs[0xF] = 0; // clear vf before doing gods work
-
-                for (uint8_t row = 0; row < height; ++row) {
-                    uint8_t sprite_row = memory[i_reg + row];
-                    for (uint8_t col = 0; col < 8; ++col) {
-                        if (sprite_row & (0x80 >> col)) {
-                            // collision detection
-                            if (screen[y + row][x + col]) {
-                                v_regs[0xF] = 1; 
-                            }
-                            screen[y + row][x + col] ^= 1;
+        case 0xF000: {
+            switch (opcode & 0x00FF) {
+                case 0x0007:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        v_regs[vx_index] = delay_timer;
+                    }
+                    break;
+                    
+                case 0x000A:
+                    // Handle key press
+                    break;
+                    
+                case 0x0015:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        delay_timer = v_regs[vx_index];
+                    }
+                    break;
+                    
+                case 0x0018:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        sound_timer = v_regs[vx_index];
+                    }
+                    break;
+                    
+                case 0x001E:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        i_reg += v_regs[vx_index];
+                        v_regs[0xF] = (i_reg > 0xFFF) ? 1 : 0;
+                    }
+                    break;
+                    
+                case 0x0029:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        i_reg = v_regs[vx_index] * 5;
+                    }
+                    break;
+                    
+                case 0x0033:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        memory[i_reg] = v_regs[vx_index] / 100;
+                        memory[i_reg + 1] = (v_regs[vx_index] / 10) % 10;
+                        memory[i_reg + 2] = v_regs[vx_index] % 10;
+                    }
+                    break;
+                    
+                case 0x0055:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        for (int i = 0; i <= vx_index; ++i) {
+                            memory[i_reg + i] = v_regs[i];
                         }
                     }
-                }
-                render_screen();
+                    break;
+                    
+                case 0x0065:
+                    {
+                        uint8_t vx_index = (opcode & 0x0F00) >> 8;
+                        for (int i = 0; i <= vx_index; ++i) {
+                            v_regs[i] = memory[i_reg + i];
+                        }
+                    }
+                    break;
+                    
+                default:
+                    std::cout << "Unknown 0xF000 opcode: " << std::hex << opcode << std::dec << std::endl;
+                    break;
             }
             break;
+        }
 
+        case 0xD000: {
+            uint8_t x = v_regs[(opcode & 0x0F00) >> 8] % SWIDTH;  // Wrap around screen width
+            uint8_t y = v_regs[(opcode & 0x00F0) >> 4] % SHEIGHT; // Wrap around screen height
+            uint8_t height = opcode & 0x000F;
+            
+            v_regs[0xF] = 0; // Reset collision flag
+            
+            for (uint8_t row = 0; row < height && (y + row) < SHEIGHT; ++row) {
+                uint8_t sprite_row = memory[i_reg + row];
+                for (uint8_t col = 0; col < 8 && (x + col) < SWIDTH; ++col) {
+                    if (sprite_row & (0x80 >> col)) {
+                        // Get screen coordinates with wrapping
+                        size_t screen_x = (x + col) % SWIDTH;
+                        size_t screen_y = (y + row) % SHEIGHT;
+                        
+                        // If there's already a pixel there, we have a collision
+                        if (screen[screen_y][screen_x]) {
+                            v_regs[0xF] = 1;
+                        }
+                        
+                        // XOR the pixel
+                        screen[screen_y][screen_x] ^= 1;
+                    }
+                }
+            }
+            render_screen();
+            break;
+        }
+        
         default:
             std::cout << "Unknown opcode who dis: " << std::hex << opcode << " (" << (opcode & 0xF000) << ")" << std::dec << std::endl;
             break;
     }
 }
-
+// Implementation of init_raylib
 bool init_raylib() {
     std::cerr << "Initializing Raylib... " << std::endl;
-    InitWindow(SWIDTH, SHEIGHT, ">_ CHIP-8 Interpreter in Raylib.");
+    
+    const int scaleup = 10;
+    InitWindow(SWIDTH * scaleup, SHEIGHT * scaleup, ">_ CHIP-8 Interpreter in Raylib.");
     SetTargetFPS(60);
 
-    if (!WindowShouldClose()) {
+    // The previous check was wrong - WindowShouldClose() checks if the window
+    // should close, not if it's successfully initialized
+    if (IsWindowReady()) {
         window_initialized = true;
+        return true;
     } else {
         std::cerr << "Raylib failed to start window, ooops...sorry!" << std::endl;
         return false;
     }
-
-    return true;
 }
 
+// Implementation of load_chip8_file
 bool load_chip8_file(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
@@ -378,6 +401,7 @@ bool load_chip8_file(const std::string& filepath) {
     return true;
 }
 
+// Main function
 int main() {
     const std::string filepath = "ROMs/3corax.ch8";
     freopen("debuglog.txt", "w", stdout);
@@ -420,8 +444,6 @@ int main() {
             render_screen();
             last_frame_time = current_time;
         }
-
-        // future input handling here
     }
 
     CloseWindow();
