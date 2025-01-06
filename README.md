@@ -1,6 +1,6 @@
 ## About
 CHIP-8 emulator written in C++ with Raylib. <br>
-The CHIP-8 was an early platform for simple games and applications in the 1970s.<br>This emulator provides a modern implementation with cycle-accurate timing and original hardware quirks.
+This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
 
 ## Controls
 ```
@@ -25,20 +25,3 @@ A 0 B F       Z X C V
 - C++
 - Raylib
 - CMake
-
-## Build & Run
-
-```bash
-# Install Raylib first if you haven't:
-# Ubuntu/Debian:
-sudo apt install libraylib-dev
-
-# Arch
-sudo pacman -S raylib
-
-# Clone and build
-git clone https://github.com/[your-username]/chip8
-cd chip8
-cmake .
-make
-
