@@ -23,7 +23,7 @@ A 0 B F       Z X C V
 
 ## Screenshots:
 ### Tetris
-![Description](Assets/image.png)
+![Description](Assets/image3.png)
 <br>
 
 ### Ace Attorney <br>
