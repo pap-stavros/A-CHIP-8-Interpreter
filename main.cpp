@@ -176,46 +176,46 @@ void run_opcode(uint16_t opcode) {
             uint8_t vy = v_regs[vyIndex];
             
             switch (opcode & 0x000F) {
-                case 0x0: // VX = VY
+                case 0x0:
                     v_regs[vxIndex] = vy;
                     break;
-                case 0x1: // VX |= VY
+                case 0x1:
                     v_regs[vxIndex] = vx | vy;
                     break;
-                case 0x2: // VX &= VY
+                case 0x2:
                     v_regs[vxIndex] = vx & vy;
                     break;
-                case 0x3: // VX ^= VY
+                case 0x3:
                     v_regs[vxIndex] = vx ^ vy;
                     break;
-                case 0x4: { // VX += VY
+                case 0x4: {
                     uint16_t result = vx + vy;
                     uint8_t flag = (result > 0xFF) ? 1 : 0;
                     v_regs[vxIndex] = static_cast<uint8_t>(result);
                     v_regs[0xF] = flag;
                     break;
                 }
-                case 0x5: { // VX -= VY
+                case 0x5: {
                     uint8_t flag = (vx >= vy) ? 1 : 0;
                     v_regs[vxIndex] = vx - vy;
                     v_regs[0xF] = flag;
                     break;
                 }
-                case 0x6: { // VX = VY >> 1 (store LSB in VF)
-                    uint8_t val = vy;  // Some implementations use VX instead of VY
+                case 0x6: {
+                    uint8_t val = vy;
                     uint8_t flag = val & 0x1;
                     v_regs[vxIndex] = val >> 1;
                     v_regs[0xF] = flag;
                     break;
                 }
-                case 0x7: { // VX = VY - VX
+                case 0x7: {
                     uint8_t flag = (vy >= vx) ? 1 : 0;
                     v_regs[vxIndex] = vy - vx;
                     v_regs[0xF] = flag;
                     break;
                 }
-                case 0xE: { // VX = VY << 1 (store MSB in VF)
-                    uint8_t val = vy;  // Some implementations use VX instead of VY
+                case 0xE: {
+                    uint8_t val = vy;
                     uint8_t flag = (val & 0x80) >> 7;
                     v_regs[vxIndex] = val << 1;
                     v_regs[0xF] = flag;

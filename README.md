@@ -1,8 +1,6 @@
 ## About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
-<br><br>
-There's still work to be done with some of the interpreter logic, regarding the opcodes. <br>It's not passing all the flag tests.
 
 ## Controls
 ```
