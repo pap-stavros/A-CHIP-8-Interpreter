@@ -1,7 +1,7 @@
 ## About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
-The emulator now requires you to have a ROMs/ directory under /CHIP8
+> **Note:** Place your ROM files in a `ROMs/` directory at the root level of the project (`/CHIP8/ROMs`).
 
 ## Controls
 ```
