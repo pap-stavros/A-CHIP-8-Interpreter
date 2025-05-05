@@ -1,5 +1,4 @@
 # Build artifacts
-main 
 *.o
 *.obj
 *.exe
@@ -7,38 +6,10 @@ main
 *.app
 build/
 
-# Libraries
-*.lib
-*.a
-*.dll
-*.so
-*.dylib
-
-# IDE and editors
-.vscode/
-.idea/
-*.sublime-*
-*~
-*.swp
-
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
+# makefile
 Makefile
-
-# Logs and temp files
-*.log
-*.debug
-*.tmp
-*.temp
-
-# OS specific
-.DS_Store
-Thumbs.db
 
 # Project specific
 *.bin
 *.ch8
-raygui.h
 *.txt
