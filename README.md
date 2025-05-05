@@ -1,7 +1,7 @@
 # About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
-> **Note:** Place your ROM files in a ROMs directory like so, (`/CHIP8/ROMs`). They must be .ch8 files so, if you have a chip8 ROM that ends in anything other than that, you can simply rename it.
+> **Note:** Place your ROM files in the ROMs directory, (`/CHIP8/ROMs`). They must be .ch8 files so, if you have a chip8 ROM that ends in anything other than that, you can simply rename it.
 
 ## Controls
 ```
@@ -23,25 +23,28 @@ A 0 B F       Z X C V
 Before building the CHIP8 emulator, you'll need:
 - C++ compiler, i guess
 - Raylib
-- Place your ROMs like this (`/CHIP8/ROMs`).
+- Place your ROMs in this directory (`/CHIP8/ROMs`).
 - Make sure you are in (`A-CHIP-8-Interpreter/CHIP8/`) to run the following commands.
 
 ## Commands
 
 ### Linux
 ```bash
+mkdir -p ROMs/
 mkdir -p src/build
 g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
 ### macOS
 ```bash
+mkdir -p ROMs/
 mkdir -p src/build
 g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 ```
 
 ### Windows (MSYS2/MinGW)
 ```bash
+mkdir -p ROMs/
 mkdir -p src/build
 g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
