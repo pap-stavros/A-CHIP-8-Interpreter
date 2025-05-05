@@ -24,25 +24,26 @@ Before building the CHIP8 emulator, you'll need:
 - C++ compiler, i guess
 - Raylib
 - Place your ROMs like this (`/CHIP8/ROMs`).
+- Make sure you are in (`A-CHIP-8-Interpreter/CHIP8/`) to run the following commands.
 
 ## Commands
 
 ### Linux
 ```bash
-mkdir -p ../build
-g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+mkdir -p src/build
+g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
 ### macOS
 ```bash
-mkdir -p ../build
-g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+mkdir -p src/build
+g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 ```
 
 ### Windows (MSYS2/MinGW)
 ```bash
-mkdir -p ../build
-g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
+mkdir -p src/build
+g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
 
 ## Running the Emulator
@@ -50,11 +51,11 @@ After building, run the emulator from the build directory:
 
 ```bash
 # Linux/macOS
-cd ../build
+cd src/build
 ./chip8_emulator
 
 # Windows
-cd ..\build
+cd src\build
 .\chip8_emulator.exe
 ```
 The emulator will list available ROM files from the `../ROMs` directory and prompt you to select one.

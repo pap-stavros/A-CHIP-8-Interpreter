@@ -44,7 +44,7 @@ int main() {
     srand(time(0));
     std::cerr << "Hello, World!: " << std::endl;
 
-    const std::string romDirectory = "../ROMs";
+    const std::string romDirectory = "../../ROMs";
     std::vector<std::string> romFiles = GetRomFiles(romDirectory);
 
     if (romFiles.empty()) {
