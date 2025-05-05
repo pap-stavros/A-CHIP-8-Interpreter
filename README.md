@@ -48,6 +48,7 @@ g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator.exe src/*.cpp -lraylib 
 
 ## Running the Emulator
 After building, run the emulator from the build directory:
+> **Note:** Don't forget, it will not run without a ROM.
 
 ```bash
 # Linux/macOS
