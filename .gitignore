@@ -8,6 +8,7 @@ build/
 
 # makefile
 Makefile
+makefile
 
 # Project specific
 *.bin
