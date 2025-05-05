@@ -18,6 +18,53 @@ A 0 B F       Z X C V
 - [ ] Adjustable CPU speed
 - [ ] Configurable Quirks
 
+# Build Instructions
+
+## Prerequisites
+Before building the CHIP8 emulator, you'll need:
+- C++ compiler, i guess
+- Raylib
+- Place your ROMs like this (`/CHIP8/ROMs`).
+
+## Commands
+
+### Linux
+```bash
+mkdir -p ../build
+g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+```
+
+### macOS
+```bash
+mkdir -p ../build
+g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+```
+
+### Windows (MSYS2/MinGW)
+```bash
+mkdir -p ../build
+g++ -std=c++17 -Wall -Wextra -o ../build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
+```
+
+## Running the Emulator
+After building, run the emulator from the build directory:
+
+```bash
+# Linux/macOS
+cd ../build
+./chip8_emulator
+
+# Windows
+cd ..\build
+.\chip8_emulator.exe
+```
+The emulator will list available ROM files from the `../ROMs` directory and prompt you to select one.
+
+## Troubleshooting
+- If you encounter linking errors, ensure Raylib is properly installed
+- Debug logs are written to `debuglog.txt` in the current directory
+- Make sure your ROMs are in the correct location.
+
 ## Development
 - This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
 - [Raylib](https://www.raylib.com/) is the video/audio library of choice.
