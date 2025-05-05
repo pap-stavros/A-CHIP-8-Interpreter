@@ -69,10 +69,10 @@ The emulator will list available ROM files from the `../ROMs` directory and prom
 
 ## Screenshots:
 ### Tetris
-![Description](Assets/image3.png)
+![Description](https://imgur.com/nn1TbfN)
 - [Tetris ROM](https://github.com/soupi/chip-8/tree/master/roms)
 <br>
 
 ### Ace Attorney <br>
-![Description](Assets/image2.png)
+![Description](https://imgur.com/DvAI4vY)
 - [Ace Attorney ROM](https://github.com/JohnEarnest/chip8Archive/tree/master/src/8ceattourny_d3)
