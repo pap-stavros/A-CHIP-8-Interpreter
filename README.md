@@ -20,7 +20,6 @@ A 0 B F       Z X C V
 
 # Build Instructions
 
-## Prerequisites
 Before building the CHIP8 emulator, you'll need:
 - C++ compiler, i guess
 - Raylib
