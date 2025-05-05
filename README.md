@@ -1,4 +1,4 @@
-## About
+# About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
 > **Note:** Place your ROM files in a `ROMs/` directory at the root level of the project (`/CHIP8/ROMs`).
@@ -64,7 +64,7 @@ The emulator will list available ROM files from the `../ROMs` directory and prom
 - Debug logs are written to `debuglog.txt` in the current directory
 - Make sure your ROMs are in the correct location.
 
-## Development
+# Development
 - This emulator was developed and tested using this excellent [CHIP-8 Test Suite](https://github.com/Timendus/chip8-test-suite) by [Timendus](https://github.com/Timendus)
 - [Raylib](https://www.raylib.com/) is the video/audio library of choice.
 
