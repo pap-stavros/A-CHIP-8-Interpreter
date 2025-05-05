@@ -1,7 +1,7 @@
 # About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
-> **Note:** Place your ROM files in a ROMs directory like so, (`/CHIP8/ROMs`). They must be .ch8 files. If you have a chip8 ROM that ends in anything other than that, you can simply rename it.
+> **Note:** Place your ROM files in a ROMs directory like so, (`/CHIP8/ROMs`). They must be .ch8 files so, if you have a chip8 ROM that ends in anything other than that, you can simply rename it.
 
 ## Controls
 ```
