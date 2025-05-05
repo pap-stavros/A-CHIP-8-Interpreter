@@ -1,12 +1,8 @@
 #include <iostream>
-#include <array>
 #include <cstdint>
 #include <chrono>
-#include <thread>
-#include <fstream>
 #include <cstring>
 #include <raylib.h>
-#include <cmath>
 #include <filesystem>
 #include <vector>
 #include "chip8.h"
@@ -15,13 +11,12 @@
 std::vector<std::string> GetRomFiles(const std::string& romDir) {
     std::vector<std::string> romFiles;
     for (const auto& entry : std::filesystem::directory_iterator(romDir)) {
-        if (entry.path().extension() == ".ch8") {
+        if (entry.path().extension() == ".ch8" || entry.path().extension() == ".o8") {
             romFiles.push_back(entry.path().filename().string());
         }
     }
     return romFiles;
 }
-
 // pick from listed rom files!!!
 std::string SelectRom(const std::vector<std::string>& romFiles) {
     std::cout << "Available ROM files:\n";
