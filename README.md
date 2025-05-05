@@ -22,10 +22,9 @@ A 0 B F       Z X C V
 Before building the CHIP8 emulator, you'll need:
 - C++ compiler, i guess
 - Raylib
-- Make sure you are in (`A-CHIP-8-Interpreter/CHIP8/`) to run the following commands.
 
 ## Commands
-
+ Make sure you are in (`A-CHIP-8-Interpreter/CHIP8/`) to run the following commands.
 ### Linux
 ```bash
 mkdir -p ROMs src/build
