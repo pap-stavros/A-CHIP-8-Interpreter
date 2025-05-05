@@ -1,6 +1,7 @@
 ## About
 CHIP-8 emulator written in C++ with Raylib. <br>
 This emulator/interpreter provides a modern implementation with cycle-accurate timing and original hardware quirks.
+The emulator now requires you to have a ROMs/ directory under /CHIP8
 
 ## Controls
 ```
@@ -12,7 +13,7 @@ A 0 B F       Z X C V
 ```
 ### Future Goals
 - [ ] GUI Debugger
-- [ ] ROM Browser/Manager
+- [x] ROM Browser
 - [ ] Custom Key Mapping
 - [ ] Adjustable CPU speed
 - [ ] Configurable Quirks
