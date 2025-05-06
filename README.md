@@ -28,19 +28,19 @@ Before building the CHIP8 emulator, you'll need:
 ### Linux
 ```bash
 mkdir -p ROMs src/build
-g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+g++ -std=c++23 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 ```
 
 ### macOS
 ```bash
 mkdir -p ROMs src/build
-g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
+g++ -std=c++23 -Wall -Wextra -o src/build/chip8_emulator src/*.cpp -lraylib -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo
 ```
 
 ### Windows (MSYS2/MinGW)
 ```bash
 mkdir -p ROMs src/build
-g++ -std=c++17 -Wall -Wextra -o src/build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
+g++ -std=c++23 -Wall -Wextra -o src/build/chip8_emulator.exe src/*.cpp -lraylib -lopengl32 -lgdi32 -lwinmm
 ```
 
 ## Running the Emulator
