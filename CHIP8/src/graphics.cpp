@@ -53,9 +53,9 @@ bool init_raylib() {
             float time = static_cast<float>(i) / sampleRate;
             samples[i] = static_cast<short>(32000.0f * std::sin(2.0f * PI * 440.0f * time));
         }
-
         beep = LoadSoundFromWave(wave);
         UnloadWave(wave);
+        free(wave.data);
     }
 
     if (IsWindowReady()) {
